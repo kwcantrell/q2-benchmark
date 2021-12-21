@@ -1,5 +1,6 @@
 import biom
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import upsetplot
 
@@ -61,11 +62,49 @@ def _create_group_presence_df(
     return all_groups_df
 
 
+def _taxsplit(
+    df: pd.DataFrame,
+    taxonomy: pd.DataFrame,
+    level: int
+) -> pd.DataFrame:
+    """Collapse taxa to a specified level
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Group presence DataFrame
+    taxonomy : pd.DataFrame
+        DataFrame of taxonomic levels where index is feature IDs - should
+        contain a column "Taxon" with semicolon-separated taxonomy assignments
+    level : int
+        Taxonomic level to collapse. In GreenGenes, for example, Level 1
+        corresponds to Kingdom, Level 2 to Phylum, and so on.
+
+    Returns
+    -------
+    pd.DataFrame
+        Pandas DataFrame of features at specifiec taxonomy level formatted
+        for use in upsetplot
+    """
+    taxonomy_split = taxonomy["Taxon"].str.split("; ", expand=True)
+    # NOTE: Not sure how SILVA labels look - are they also, e.g. "s__<name>"?
+    taxonomy_split = taxonomy_split.replace(regex=r"\w__$", value=np.nan)
+    num_levels = taxonomy_split.shape[1]
+    if level > num_levels:
+        raise ValueError("Level must be less than total number of levels!")
+    if level <= 0:
+        raise ValueError("Level cannot be <= 0!")
+
+    return taxonomy_split.join(df).groupby(level - 1).sum()
+
+
 def plot(
     table: biom.Table,
     metadata: pd.DataFrame,
     column: str,
-    save_loc: str
+    save_loc: str,
+    tax_level: int = None,
+    taxonomy: pd.DataFrame = None
 ) -> None:
     """Create and save upset plot
 
@@ -79,8 +118,16 @@ def plot(
         Column in metadata for group membership calculation
     save_loc : str
         File to save plot
+    tax_level : int
+        Taxonomic level to split (default = None)
+    taxonomy: pd.DataFrame
+        DataFrame containing taxonomic assignments in "Taxon" column
     """
     df = _create_group_presence_df(table, metadata, column)
+    if tax_level is not None:
+        if taxonomy is None:
+            raise ValueError("Must provide taxonomy!")
+        df = _taxsplit(df, taxonomy, tax_level)
     df = _format_uplot(df)
 
     fig = plt.figure()
