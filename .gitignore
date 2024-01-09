@@ -1,2 +1,2 @@
-from-kellen-cavagnero/
-from-lisa-marotz
+*.egg-info/
+*__pycache__/
