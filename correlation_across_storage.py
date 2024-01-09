@@ -82,6 +82,7 @@ def correlation_plot(
 
 	return correlation_table
 
-meta = pd.read_csv('from-lisa-marotz/oral-16S-analysis/q2_saliva_metadata.tsv', sep='\t', index_col=0)
-at = pd.read_csv('from-lisa-marotz/oral-16S-analysis/table-noMitoChlor-saliva-p6_.tsv', sep='\t', index_col=0)
-correlation_plot(at, meta, 'taxa', 'host_subject_id', 'volume_ml', 'swbFroz', 'correlation_fig.png')
+# example how to run
+#meta = pandas df metadata
+#at = abundance table
+#correlation_plot(at, meta, 'taxa', 'host_subject_id', 'volume_ml', 'swbFroz', 'correlation_fig.png')
